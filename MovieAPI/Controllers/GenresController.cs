@@ -13,12 +13,10 @@ namespace MovieAPI.Controllers
     {
         private const string CaheTag = "genres";
         private readonly IOutputCacheStore _outputCacheStore;
-        private readonly IInMemoryRepository _repository;
 
         public GenresController(IOutputCacheStore outputCacheStore, IInMemoryRepository repository)
         {
             this._outputCacheStore = outputCacheStore;
-            this._repository = repository;
         }
 
         [HttpGet]
@@ -26,7 +24,7 @@ namespace MovieAPI.Controllers
         public async Task<ActionResult<List<Genre>>> GetAllAsync()
         {
             await Task.Delay(3000);
-            return Ok(_repository.getAll());
+            return Ok();
         }
 
         [HttpGet("{id:int}")]
@@ -34,21 +32,12 @@ namespace MovieAPI.Controllers
         public async Task<ActionResult<Genre>> GetById(int id)
         {
             await Task.Delay(10);
-            return Ok(_repository.GetById(id));
+            return Ok();
         }
 
         [HttpPost]
         public async Task<ActionResult> Post( [FromBody] Genre genre)
         {
-            var genreExists = _repository.Exists(genre.Name);
-
-            if (genreExists)
-            {
-                return BadRequest($"El genero con nombre {genre.Name} ya existe!");
-            }
-
-            _repository.Create(genre);
-
             //tag: genres - refresca la cache
             await _outputCacheStore.EvictByTagAsync(CaheTag, default);
 
@@ -56,7 +45,7 @@ namespace MovieAPI.Controllers
             {
                 statusCode = 200,
                 message = "Genero agregado exitosamente!",
-                data = genre
+                data = new { }
             });
         }
     }
