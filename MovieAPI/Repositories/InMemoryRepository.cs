@@ -4,7 +4,15 @@ using System.Linq;
 
 namespace MovieAPI.Repositories
 {
-    public class InMemoryRepository
+    public interface IInMemoryRepository
+    {
+        List<Genre> getAll();
+        bool Exists(string name);
+        Genre GetById(int id);
+        Genre Create(Genre genre);
+    }
+
+    public class InMemoryRepository : IInMemoryRepository
     {
         private List<Genre> _genres;
 
@@ -25,6 +33,17 @@ namespace MovieAPI.Repositories
         public bool Exists(string name)
         {
             return _genres.Any(x => x.Name == name);
+        }
+
+        public Genre GetById(int id)
+        {
+            return _genres.FirstOrDefault(x => x.Id == id);
+        }
+
+        public Genre Create(Genre genre)
+        {
+            this._genres.Add(genre);
+            return genre;
         }
     }
 }

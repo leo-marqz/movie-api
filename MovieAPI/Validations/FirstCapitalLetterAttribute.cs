@@ -4,7 +4,7 @@ namespace MovieAPI.Validations
 {
     public class FirstCapitalLetterAttribute : ValidationAttribute
     {
-        protected override ValidationResult? IsValid(object? value, ValidationContext validationContext)
+        protected override ValidationResult IsValid(object value, ValidationContext validationContext)
         {
            if(value is null || string.IsNullOrWhiteSpace(value.ToString()))
             {

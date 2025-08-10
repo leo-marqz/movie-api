@@ -11,30 +11,46 @@ namespace MovieAPI.Controllers
     [ApiController]
     public class GenresController : ControllerBase
     {
-        public GenresController()
+        private const string CaheTag = "genres";
+        private readonly IOutputCacheStore _outputCacheStore;
+        private readonly IInMemoryRepository _repository;
+
+        public GenresController(IOutputCacheStore outputCacheStore, IInMemoryRepository repository)
         {
-            
+            this._outputCacheStore = outputCacheStore;
+            this._repository = repository;
         }
 
         [HttpGet]
-        [OutputCache]
+        [OutputCache(Tags = [CaheTag] )]
         public async Task<ActionResult<List<Genre>>> GetAllAsync()
         {
             await Task.Delay(3000);
-            return Ok(new InMemoryRepository().getAll());
+            return Ok(_repository.getAll());
+        }
+
+        [HttpGet("{id:int}")]
+        [OutputCache(Tags = [CaheTag])]
+        public async Task<ActionResult<Genre>> GetById(int id)
+        {
+            await Task.Delay(10);
+            return Ok(_repository.GetById(id));
         }
 
         [HttpPost]
         public async Task<ActionResult> Post( [FromBody] Genre genre)
         {
-            var repository = new InMemoryRepository();
-
-            var genreExists = repository.Exists(genre.Name);
+            var genreExists = _repository.Exists(genre.Name);
 
             if (genreExists)
             {
                 return BadRequest($"El genero con nombre {genre.Name} ya existe!");
             }
+
+            _repository.Create(genre);
+
+            //tag: genres - refresca la cache
+            await _outputCacheStore.EvictByTagAsync(CaheTag, default);
 
             return Ok(new
             {

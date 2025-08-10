@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using MovieAPI.Repositories;
 using System;
 
 namespace MovieAPI
@@ -19,6 +20,8 @@ namespace MovieAPI
             //builder.Services.AddOpenApi();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+            builder.Services.AddSingleton<IInMemoryRepository, InMemoryRepository>();
 
             builder.Services.AddOutputCache((options) =>
             {
