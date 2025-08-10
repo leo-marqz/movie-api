@@ -1,4 +1,6 @@
 ﻿using MovieAPI.Entities;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace MovieAPI.Repositories
 {
@@ -18,6 +20,11 @@ namespace MovieAPI.Repositories
         public List<Genre> getAll()
         {
             return _genres;
+        }
+
+        public bool Exists(string name)
+        {
+            return _genres.Any(x => x.Name == name);
         }
     }
 }
