@@ -1,8 +1,9 @@
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using MovieAPI.Repositories;
 using System;
 
 namespace MovieAPI
@@ -14,18 +15,33 @@ namespace MovieAPI
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+            //-------------------------------
             builder.Services.AddRouting((options)=>options.LowercaseUrls = true);
             builder.Services.AddControllers();
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             //builder.Services.AddOpenApi();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            builder.Services.AddSingleton<IInMemoryRepository, InMemoryRepository>();
+            builder.Services.AddDbContext<ApplicationDbContext>((options) =>
+            {
+                options.UseSqlServer("name=DefaultConnection");
+            });
 
             builder.Services.AddOutputCache((options) =>
             {
                 options.DefaultExpirationTimeSpan = TimeSpan.FromSeconds(30);
+            });
+
+            var allowedOrigins = builder.Configuration.GetValue<string>("AllowedOrigins")!.Split(',');
+
+            builder.Services.AddCors((options) =>
+            {
+                options.AddDefaultPolicy((corsOptions) =>
+                {
+                    corsOptions.WithOrigins(allowedOrigins)
+                                .AllowAnyMethod()
+                                .AllowAnyHeader();
+                });
             });
 
             var app = builder.Build();
@@ -39,6 +55,7 @@ namespace MovieAPI
             }
 
             app.UseHttpsRedirection();
+            app.UseCors();
             app.UseOutputCache();
             app.UseAuthorization();
 
