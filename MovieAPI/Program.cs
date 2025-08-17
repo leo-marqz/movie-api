@@ -22,6 +22,8 @@ namespace MovieAPI
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            builder.Services.AddAutoMapper(typeof(Program));
+
             builder.Services.AddDbContext<ApplicationDbContext>((options) =>
             {
                 options.UseSqlServer("name=DefaultConnection");
@@ -40,7 +42,8 @@ namespace MovieAPI
                 {
                     corsOptions.WithOrigins(allowedOrigins)
                                 .AllowAnyMethod()
-                                .AllowAnyHeader();
+                                .AllowAnyHeader()
+                                .WithExposedHeaders("x-total-records");
                 });
             });
 

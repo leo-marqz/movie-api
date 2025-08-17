@@ -1,8 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OutputCaching;
 using Microsoft.EntityFrameworkCore;
+using MovieAPI.DTOs;
 using MovieAPI.Entities;
+using MovieAPI.Extensions;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace MovieAPI.Controllers
@@ -14,48 +19,57 @@ namespace MovieAPI.Controllers
         private const string CaheTag = "genres";
         private readonly IOutputCacheStore _outputCacheStore;
         private readonly ApplicationDbContext context;
+        private readonly IMapper mapper;
 
-        public GenresController(IOutputCacheStore outputCacheStore, ApplicationDbContext context)
+        public GenresController(
+            IOutputCacheStore outputCacheStore, 
+            ApplicationDbContext context,
+            IMapper mapper)
         {
             this._outputCacheStore = outputCacheStore;
             this.context = context;
+            this.mapper = mapper;
         }
 
         [HttpGet]
-        [OutputCache(Tags = [CaheTag] )]
-        public async Task<ActionResult<List<Genre>>> GetAllAsync()
+        [OutputCache(Tags = [CaheTag])]
+        public async Task<ActionResult<List<GenreResponseDto>>> GetAllAsync(
+            [FromQuery] PaginationDto pagination)
         {
-            await Task.Delay(3000);
-            var genres = await this.context.Genres.ToListAsync();
-            
-            //new List<Genre>()
-            //{
-            //    new Genre {Id=1, Name="Action"},
-            //    new Genre {Id=2, Name="Comedy"},
-            //    new Genre {Id=3, Name="Drama"},
-            //    new Genre {Id=4, Name="Horror"},
-            //    new Genre {Id=5, Name="Romance"},
-            //    new Genre {Id=6, Name="Thriller"}
-            //};
-
-            return Ok(genres);
+            var queryable = this.context.Genres;
+            await HttpContext.InsertPaginationParametersInTheHeaders(queryable);
+            return await queryable
+                .OrderBy((x)=>x.Name) //necesario para no tener datos a lo bestia.
+                .Paginate(pagination)
+                .ProjectTo<GenreResponseDto>(this.mapper.ConfigurationProvider)
+                .ToListAsync();
         }
 
         [HttpGet("{id:int}", Name = "GetGenreById")]
         [OutputCache(Tags = [CaheTag])]
-        public async Task<ActionResult<Genre>> GetById(int id)
+        public async Task<ActionResult<GenreResponseDto>> GetByIdAsync(int id)
         {
-            await Task.Delay(10);
-            return Ok();
+            var dto = await this.context.Genres
+                .ProjectTo<GenreResponseDto>(this.mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync((x)=>x.Id == id);
+            
+            if(dto is null)
+            {
+                return NotFound($"Genero con id {id} no encontrado!");
+            }
+
+            return Ok(dto);
         }
 
         [HttpPost]
-        public async Task<ActionResult> Post( [FromBody] Genre genre)
+        public async Task<ActionResult> PostAsync( [FromBody] GenreRequestDto request)
         {
-            if(genre == null)
+            if(request == null)
             {
                 return NotFound();
             }
+
+            var genre = this.mapper.Map<Genre>(request);
 
             this.context.Add(genre);
             await this.context.SaveChangesAsync();
