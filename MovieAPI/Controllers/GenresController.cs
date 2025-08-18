@@ -79,5 +79,27 @@ namespace MovieAPI.Controllers
 
             return CreatedAtRoute("GetGenreById", new {id = genre.Id}, genre);
         }
+
+        [HttpPut("{id:int}")]
+        [OutputCache(Tags = [CaheTag])]
+        public async Task<ActionResult> PutAsync(int id, [FromBody] GenreRequestDto request)
+        {
+            var genreExists = await this.context.Genres.AnyAsync((x) => x.Id == id);
+
+            if(!genreExists)
+            {
+                return NotFound();
+            }
+
+            var genre = this.mapper.Map<Genre>(request);
+            genre.Id = id;
+
+            this.context.Update(genre);
+            await this.context.SaveChangesAsync();
+
+            await this._outputCacheStore.EvictByTagAsync(CaheTag, default);
+
+            return NoContent();
+        }
     }
 }
