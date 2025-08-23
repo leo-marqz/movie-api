@@ -22,7 +22,9 @@ namespace MovieAPI.Utilities.mapper
 
         private void MapActors()
         {
-
+            CreateMap<ActorRequestDto, Actor>()
+                .ForMember((x) => x.Picture, (options) => options.Ignore());
+            CreateMap<Actor, ActorResponseDto>();
         }
 
         private void MapCines()

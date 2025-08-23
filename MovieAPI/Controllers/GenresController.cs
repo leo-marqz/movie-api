@@ -16,7 +16,7 @@ namespace MovieAPI.Controllers
     [ApiController]
     public class GenresController : ControllerBase
     {
-        private const string CaheTag = "genres";
+        private const string CACHE_TAG = "genres";
         private readonly IOutputCacheStore _outputCacheStore;
         private readonly ApplicationDbContext context;
         private readonly IMapper mapper;
@@ -32,7 +32,7 @@ namespace MovieAPI.Controllers
         }
 
         [HttpGet]
-        [OutputCache(Tags = [CaheTag])]
+        [OutputCache(Tags = [CACHE_TAG])]
         public async Task<ActionResult<List<GenreResponseDto>>> GetAllAsync(
             [FromQuery] PaginationDto pagination)
         {
@@ -46,7 +46,7 @@ namespace MovieAPI.Controllers
         }
 
         [HttpGet("{id:int}", Name = "GetGenreById")]
-        [OutputCache(Tags = [CaheTag])]
+        [OutputCache(Tags = [CACHE_TAG])]
         public async Task<ActionResult<GenreResponseDto>> GetByIdAsync(int id)
         {
             var dto = await this.context.Genres
@@ -75,13 +75,13 @@ namespace MovieAPI.Controllers
             await this.context.SaveChangesAsync();
 
             //tag: genres - refresca la cache
-            await _outputCacheStore.EvictByTagAsync(CaheTag, default);
+            await _outputCacheStore.EvictByTagAsync(CACHE_TAG, default);
 
             return CreatedAtRoute("GetGenreById", new {id = genre.Id}, genre);
         }
 
         [HttpPut("{id:int}")]
-        [OutputCache(Tags = [CaheTag])]
+        [OutputCache(Tags = [CACHE_TAG])]
         public async Task<ActionResult> PutAsync(int id, [FromBody] GenreRequestDto request)
         {
             var genreExists = await this.context.Genres.AnyAsync((x) => x.Id == id);
@@ -97,7 +97,26 @@ namespace MovieAPI.Controllers
             this.context.Update(genre);
             await this.context.SaveChangesAsync();
 
-            await this._outputCacheStore.EvictByTagAsync(CaheTag, default);
+            await this._outputCacheStore.EvictByTagAsync(CACHE_TAG, default);
+
+            return NoContent();
+        }
+
+        [HttpDelete("{id:int}")]
+        [OutputCache(Tags = [CACHE_TAG])]
+        public async Task<ActionResult> DeleteAsync(int id)
+        {
+            var affectedRows = await this.context
+                    .Genres
+                    .Where((x) => x.Id == id)
+                    .ExecuteDeleteAsync();
+
+            if(affectedRows == 0)
+            {
+                return NotFound();
+            }
+
+            await this._outputCacheStore.EvictByTagAsync(CACHE_TAG, default);
 
             return NoContent();
         }
